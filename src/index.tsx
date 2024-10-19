@@ -19,10 +19,7 @@ const Position = NativeModules.Position
 
 let config = {
     hmsKey: '',
-
-    enableHighAccuracy: true,
-    timeout: 3000,
-    maximumAge: 10000,
+    GNSStimeout: 500,
 }
 type ConfigType = typeof config
 
@@ -31,5 +28,5 @@ export function setConfig(options: Partial<ConfigType>) {
 }
 
 export async function getCurrentPosition(): Promise<any> {
-    return await Position.getGNSS()
+    return await Position.getGNSS(config.GNSStimeout)
 }
