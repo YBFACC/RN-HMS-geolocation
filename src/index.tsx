@@ -1,22 +1,35 @@
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules, Platform } from 'react-native'
 
 const LINKING_ERROR =
-  `The package 'react-native-position' doesn't seem to be linked. Make sure: \n\n` +
-  Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
-  '- You rebuilt the app after installing the package\n' +
-  '- You are not using Expo Go\n';
+    `The package 'react-native-position' doesn't seem to be linked. Make sure: \n\n` +
+    Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
+    '- You rebuilt the app after installing the package\n' +
+    '- You are not using Expo Go\n'
 
 const Position = NativeModules.Position
-  ? NativeModules.Position
-  : new Proxy(
-      {},
-      {
-        get() {
-          throw new Error(LINKING_ERROR);
-        },
-      }
-    );
+    ? NativeModules.Position
+    : new Proxy(
+          {},
+          {
+              get() {
+                  throw new Error(LINKING_ERROR)
+              },
+          },
+      )
 
-export function multiply(a: number, b: number): Promise<number> {
-  return Position.multiply(a, b);
+let config = {
+    hmsKey: '',
+
+    enableHighAccuracy: true,
+    timeout: 3000,
+    maximumAge: 10000,
+}
+type ConfigType = typeof config
+
+export function setConfig(options: Partial<ConfigType>) {
+    config = { ...config, ...options }
+}
+
+export async function getCurrentPosition(): Promise<any> {
+    return await Position.getGNSS()
 }
