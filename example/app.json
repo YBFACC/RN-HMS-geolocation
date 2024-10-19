@@ -1,38 +1,46 @@
 {
-  "name": "PositionExample",
-  "displayName": "PositionExample",
-  "components": [
-    {
-      "appKey": "PositionExample",
-      "displayName": "PositionExample"
+    "name": "PositionExample",
+    "displayName": "PositionExample",
+    "components": [
+        {
+            "appKey": "PositionExample",
+            "displayName": "PositionExample"
+        }
+    ],
+    "resources": {
+        "android": [
+            "dist/res",
+            "dist/main.android.jsbundle"
+        ],
+        "ios": [
+            "dist/assets",
+            "dist/main.ios.jsbundle"
+        ],
+        "macos": [
+            "dist/assets",
+            "dist/main.macos.jsbundle"
+        ],
+        "visionos": [
+            "dist/assets",
+            "dist/main.visionos.jsbundle"
+        ],
+        "windows": [
+            "dist/assets",
+            "dist/main.windows.bundle"
+        ]
+    },
+    "android": {
+        "package": "position.example",
+        "permissions": [
+            {
+                "android:name": "android.permission.ACCESS_FINE_LOCATION"
+            },
+            {
+                "android:name": "android.permission.ACCESS_COARSE_LOCATION"
+            }
+        ]
+    },
+    "ios": {
+        "bundleIdentifier": "position.example"
     }
-  ],
-  "resources": {
-    "android": [
-      "dist/res",
-      "dist/main.android.jsbundle"
-    ],
-    "ios": [
-      "dist/assets",
-      "dist/main.ios.jsbundle"
-    ],
-    "macos": [
-      "dist/assets",
-      "dist/main.macos.jsbundle"
-    ],
-    "visionos": [
-      "dist/assets",
-      "dist/main.visionos.jsbundle"
-    ],
-    "windows": [
-      "dist/assets",
-      "dist/main.windows.bundle"
-    ]
-  },
-  "android": {
-    "package": "position.example"
-  },
-  "ios": {
-    "bundleIdentifier": "position.example"
-  }
 }
