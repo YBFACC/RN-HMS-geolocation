@@ -10,15 +10,7 @@ npm install react-native-position
 
 ## Usage
 
-
-```js
-import { multiply } from 'react-native-position';
-
-// ...
-
-const result = await multiply(3, 7);
-```
-
+`开发中`
 
 ## Contributing
 
