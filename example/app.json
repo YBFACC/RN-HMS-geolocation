@@ -37,6 +37,12 @@
             },
             {
                 "android:name": "android.permission.ACCESS_COARSE_LOCATION"
+            },
+            {
+                "android:name": "android.permission.ACCESS_WIFI_STATE"
+            },
+            {
+                "android:name": "android.permission.READ_PHONE_STATE"
             }
         ]
     },

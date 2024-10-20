@@ -155,7 +155,8 @@
                     "semi": false,
                     "printWidth": 100,
                     "singleAttributePerLine": true,
-                    "htmlWhitespaceSensitivity": "strict"
+                    "htmlWhitespaceSensitivity": "strict",
+                    "quoteProps": "consistent"
                 }
             ]
         }
@@ -175,7 +176,8 @@
         "semi": false,
         "printWidth": 100,
         "singleAttributePerLine": true,
-        "htmlWhitespaceSensitivity": "strict"
+        "htmlWhitespaceSensitivity": "strict",
+        "quoteProps": "consistent"
     },
     "react-native-builder-bob": {
         "source": "src",

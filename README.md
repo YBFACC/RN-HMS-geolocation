@@ -29,6 +29,15 @@ npm install react-native-position
 
 `开发中`
 
+## 注意事项
+
+1. GNSS 的坐标系是 WGS84,HMS 返回的坐标系是 GCJ02
+2. 如果要在本地运行项目 `yarn install`
+3. GNSS 需要`<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />`和`<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />`权限
+4. 需要使用 `wifi` 信息, 需要 `<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />`权限
+5. 需要使用 `cell` 信息, 需要 `<uses-permission android:name="android.permission.READ_PHONE_STATE" />`权限
+6. 使用 `HMS` 服务中需要遵守[关于华为开发者联盟与隐私的声明](https://developer.huawei.com/consumer/cn/devservice/term)
+
 ## Contributing
 
 See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.

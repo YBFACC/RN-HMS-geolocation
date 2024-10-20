@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { StyleSheet, View, Text, PermissionsAndroid, Alert, Linking } from 'react-native'
+import { StyleSheet, View, Text, PermissionsAndroid } from 'react-native'
 import { getCurrentPosition } from 'react-native-position'
 
 export default function App() {
@@ -8,36 +8,25 @@ export default function App() {
     useEffect(() => {
         const requestLocationPermission = async () => {
             try {
-                const granted = await PermissionsAndroid.request(
-                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-                    {
-                        title: '位置权限',
-                        message: '此应用需要访问您的位置信息',
-                        buttonNeutral: '稍后询问',
-                        buttonNegative: '取消',
-                        buttonPositive: '确定',
-                    },
-                )
-                if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-                    console.log('用户选择了不再询问')
-                    // 在这里处理 "不再询问" 的情况
-                    Alert.alert(
-                        '需要位置权限',
-                        '此应用需要位置权限才能正常工作。请在设置中手动开启位置权限。',
-                        [
-                            { text: '取消', style: 'cancel' },
-                            { text: '去设置', onPress: () => Linking.openSettings() },
-                        ],
-                    )
+                const granteds = await PermissionsAndroid.requestMultiple([
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION!,
+                    PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION!,
+                    PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE!,
+                ])
+                if (
+                    granteds['android.permission.ACCESS_FINE_LOCATION'] !== 'granted' ||
+                    granteds['android.permission.ACCESS_COARSE_LOCATION'] !== 'granted' ||
+                    granteds['android.permission.READ_PHONE_STATE'] !== 'granted'
+                ) {
+                    console.log('权限拒绝')
+                    return
                 }
 
-                if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                    console.log('位置权限已授予')
-                    const position = await getCurrentPosition()
-                    setResult(JSON.stringify(position))
-                } else {
-                    console.log('位置权限被拒绝')
-                }
+                const position = await getCurrentPosition({
+                    hmsKey: 'your hms key',
+                    GNSStimeout: 5000,
+                })
+                setResult(JSON.stringify(position))
             } catch (err) {
                 console.warn(err)
             }
