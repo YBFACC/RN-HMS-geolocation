@@ -108,7 +108,7 @@ class PositionModule(reactContext: ReactApplicationContext) :
           }
           is CellInfoCdma -> {
             lac = cellInfo.cellIdentity.networkId.toString()
-            cellId = cellInfo.cellIdentity.systemId.toString()
+            cellId = cellInfo.cellIdentity.basestationId.toString()
             rssi = cellInfo.cellSignalStrength.dbm.toString()
           }
         }
