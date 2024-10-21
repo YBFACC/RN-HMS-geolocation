@@ -46,6 +46,7 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
     longitude: number
     from: 'GNSS' | 'Cell' | 'Wifi'
     HMSResult?: any
+    HMSRequest?: any
 }> {
     const _config = {
         hmsKey: config.hmsKey ?? '',
@@ -57,22 +58,19 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
 
         if (wifi.isWifiEnabled && wifi.bssid) {
             // WiFi 已连接，使用 HMS Location 服务
-            const hmsLocation = await HMSLocation(
-                _config.hmsKey,
-                [],
-                [
-                    {
-                        mac: macTransform(wifi.bssid),
-                        rssi: wifi.rssi - 100,
-                        time: Date.now() * 1000,
-                    },
-                ],
-            )
+            const HMSRequest = {
+                mac: macTransform(wifi.bssid),
+                rssi: wifi.rssi - 100,
+                time: Date.now() * 1000,
+            }
+
+            const hmsLocation = await HMSLocation(_config.hmsKey, [], [HMSRequest])
             return {
                 latitude: hmsLocation.latitude,
                 longitude: hmsLocation.longitude,
                 from: 'Wifi',
                 HMSResult: hmsLocation.HMSResult,
+                HMSRequest,
             }
         } else {
             // WiFi 未连接，尝试使用 GNSS
@@ -92,27 +90,24 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
                 if (mnc < 10) {
                     mnc = 0
                 }
-                const hmsLocation = await HMSLocation(
-                    _config.hmsKey,
-                    [
-                        {
-                            currentCell: {
-                                cellId: +cell.cellId,
-                                lac: +cell.lac,
-                                mcc,
-                                mnc,
-                                rat: cell.rat,
-                                rssi: cell.rssi,
-                            },
-                        },
-                    ],
-                    [],
-                )
+                const HMSRequest = {
+                    currentCell: {
+                        cellId: +cell.cellId,
+                        lac: +cell.lac,
+                        mcc,
+                        mnc,
+                        rat: cell.rat,
+                        rssi: cell.rssi,
+                    },
+                }
+
+                const hmsLocation = await HMSLocation(_config.hmsKey, [HMSRequest], [])
                 return {
                     latitude: hmsLocation.latitude,
                     longitude: hmsLocation.longitude,
                     from: 'Cell',
                     HMSResult: hmsLocation.HMSResult,
+                    HMSRequest,
                 }
             }
         }
@@ -120,4 +115,17 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
         console.error('定位失败:', error)
         throw error
     }
+}
+
+export async function getCellInfo(): Promise<{
+    cellId: string
+    rat: number
+    lac: string
+    rssi: number
+    simOperator: string
+    latitude?: string
+    longitude?: string
+}> {
+    console.log('1.1.3')
+    return await Position.getCell()
 }
