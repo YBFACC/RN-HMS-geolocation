@@ -112,7 +112,9 @@
                 "always",
                 [
                     "lower-case",
-                    "upper-case"
+                    "upper-case",
+                    "camel-case",
+                    "pascal-case"
                 ]
             ]
         }
