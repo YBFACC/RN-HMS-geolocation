@@ -38,6 +38,11 @@ npm install react-native-position
 5. 需要使用 `cell` 信息, 需要 `<uses-permission android:name="android.permission.READ_PHONE_STATE" />`权限
 6. 使用 `HMS` 服务中需要遵守[关于华为开发者联盟与隐私的声明](https://developer.huawei.com/consumer/cn/devservice/term)
 
+## 开发中遇到的问题
+
+1. 移动的 sim 卡 telephonyManager.allCellInfo 中得不到信息
+2. mnc < 10 时, 需要设置为 0(HMS 奇怪的配置)
+
 ## Contributing
 
 See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.

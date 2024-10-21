@@ -15,22 +15,24 @@ import com.facebook.react.bridge.Arguments
 import android.os.Handler
 import android.os.Looper
 import android.net.wifi.WifiManager
-import android.telephony.CellInfoCdma
+import android.os.Build
 import android.telephony.TelephonyManager
-import android.telephony.CellInfoGsm
-import android.telephony.CellInfoLte
-import android.telephony.CellInfoWcdma
+import android.telephony.cdma.CdmaCellLocation
+import android.telephony.gsm.GsmCellLocation
 
 
 class PositionModule(reactContext: ReactApplicationContext) :
   ReactContextBaseJavaModule(reactContext) {
 
-  private val locationManager: LocationManager = reactContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+  private val locationManager: LocationManager =
+    reactContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
   private val handler = Handler(Looper.getMainLooper())
 
-  private val wifiManager: WifiManager = reactContext.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+  private val wifiManager: WifiManager =
+    reactContext.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
-  private val telephonyManager: TelephonyManager = reactContext.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+  private val telephonyManager: TelephonyManager =
+    reactContext.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
   override fun getName(): String {
     return NAME
@@ -78,65 +80,6 @@ class PositionModule(reactContext: ReactApplicationContext) :
     }
   }
 
-  @SuppressLint("MissingPermission")
-  @ReactMethod
-  fun getCell(promise: Promise) {
-
-    try {
-      val cellInfoList = telephonyManager.allCellInfo
-      if (cellInfoList.isNotEmpty()) {
-        val cellInfo = cellInfoList[0]
-        var lac = ""
-        var cellId = ""
-        var rssi = ""
-
-        when (cellInfo) {
-          is CellInfoGsm -> {
-            lac = cellInfo.cellIdentity.lac.toString()
-            cellId = cellInfo.cellIdentity.cid.toString()
-            rssi = cellInfo.cellSignalStrength.dbm.toString()
-          }
-          is CellInfoLte -> {
-            lac = cellInfo.cellIdentity.tac.toString()
-            cellId = cellInfo.cellIdentity.ci.toString()
-            rssi = cellInfo.cellSignalStrength.dbm.toString()
-          }
-          is CellInfoWcdma -> {
-            lac = cellInfo.cellIdentity.lac.toString()
-            cellId = cellInfo.cellIdentity.cid.toString()
-            rssi = cellInfo.cellSignalStrength.dbm.toString()
-          }
-          is CellInfoCdma -> {
-            lac = cellInfo.cellIdentity.networkId.toString()
-            cellId = cellInfo.cellIdentity.basestationId.toString()
-            rssi = cellInfo.cellSignalStrength.dbm.toString()
-          }
-        }
-
-        val rat = when (telephonyManager.networkType) {
-          TelephonyManager.NETWORK_TYPE_GPRS, TelephonyManager.NETWORK_TYPE_EDGE, TelephonyManager.NETWORK_TYPE_CDMA, TelephonyManager.NETWORK_TYPE_1xRTT, TelephonyManager.NETWORK_TYPE_IDEN -> "1"
-          TelephonyManager.NETWORK_TYPE_UMTS, TelephonyManager.NETWORK_TYPE_EVDO_0, TelephonyManager.NETWORK_TYPE_EVDO_A, TelephonyManager.NETWORK_TYPE_HSDPA, TelephonyManager.NETWORK_TYPE_HSUPA, TelephonyManager.NETWORK_TYPE_HSPA, TelephonyManager.NETWORK_TYPE_EVDO_B, TelephonyManager.NETWORK_TYPE_EHRPD, TelephonyManager.NETWORK_TYPE_HSPAP -> "2"
-          TelephonyManager.NETWORK_TYPE_LTE -> "3"
-          TelephonyManager.NETWORK_TYPE_NR -> "4"
-          else -> "3"
-        }
-
-        val map = Arguments.createMap()
-        map.putString("lac", lac)
-        map.putString("cellId", cellId)
-        map.putString("rat", rat)
-        map.putString("simOperator", telephonyManager.simOperator)
-        map.putString("rssi", rssi)
-
-        promise.resolve(map)
-      } else {
-        promise.reject("NO_CELL_INFO", "无法获取蜂窝网络信息")
-      }
-    } catch (e: Exception) {
-      promise.reject("CELL_INFO_ERROR", "获取蜂窝网络信息时发生错误: ${e.message}")
-    }
-  }
-
   @ReactMethod
   fun getWifi(promise: Promise) {
     if (!wifiManager.isWifiEnabled) {
@@ -162,6 +105,59 @@ class PositionModule(reactContext: ReactApplicationContext) :
       promise.resolve(map)
     } else {
       promise.reject("WIFI_INFO_ERROR", "无法获取 WiFi 信息")
+    }
+  }
+
+  @SuppressLint("MissingPermission")
+  @ReactMethod
+  fun getCell(promise: Promise) {
+    try {
+      val cel = telephonyManager.getCellLocation()
+      var cellid = 0
+      var lac = 0
+      var type = ""
+
+      if (cel is GsmCellLocation) {
+        cellid = cel.cid
+        lac = cel.lac
+        type = "GSM"
+      } else if (cel is CdmaCellLocation) {
+        cellid = cel.baseStationId
+        lac = cel.networkId
+        type = "CDMA"
+      }
+
+      var rssi = -50
+      val networkType = telephonyManager.networkType
+      if (networkType == TelephonyManager.NETWORK_TYPE_LTE) {
+        val signalStrength = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+          telephonyManager.signalStrength
+        } else {
+          null
+        }
+        if (signalStrength != null) {
+          rssi = signalStrength.getGsmSignalStrength()
+        }
+      }
+
+      val rat = when (telephonyManager.networkType) {
+        TelephonyManager.NETWORK_TYPE_GPRS, TelephonyManager.NETWORK_TYPE_EDGE, TelephonyManager.NETWORK_TYPE_CDMA, TelephonyManager.NETWORK_TYPE_1xRTT, TelephonyManager.NETWORK_TYPE_IDEN -> "1"
+        TelephonyManager.NETWORK_TYPE_UMTS, TelephonyManager.NETWORK_TYPE_EVDO_0, TelephonyManager.NETWORK_TYPE_EVDO_A, TelephonyManager.NETWORK_TYPE_HSDPA, TelephonyManager.NETWORK_TYPE_HSUPA, TelephonyManager.NETWORK_TYPE_HSPA, TelephonyManager.NETWORK_TYPE_EVDO_B, TelephonyManager.NETWORK_TYPE_EHRPD, TelephonyManager.NETWORK_TYPE_HSPAP -> "2"
+        TelephonyManager.NETWORK_TYPE_LTE -> "3"
+        TelephonyManager.NETWORK_TYPE_NR -> "4"
+        else -> "3"
+      }
+
+      val map = Arguments.createMap()
+      map.putString("lac", lac.toString())
+      map.putString("cellId", cellid.toString())
+      map.putString("simOperator", telephonyManager.getSimOperator())
+      map.putString("rat", rat)
+      map.putString("rssi", rssi.toString())
+      map.putString("type", type)
+      promise.resolve(map)
+    } catch (e: Exception) {
+      promise.reject("CELL_ERROR", "获取蜂窝网络信息失败: ${e.message}")
     }
   }
 

@@ -19,6 +19,7 @@ const Position: {
         lac: string
         rssi: number
         simOperator: string
+        type: 'GSM' | 'CDMA'
     }>
     getWifi: () => Promise<{
         isWifiEnabled: boolean
@@ -123,9 +124,7 @@ export async function getCellInfo(): Promise<{
     lac: string
     rssi: number
     simOperator: string
-    latitude?: string
-    longitude?: string
+    type: 'GSM' | 'CDMA'
 }> {
-    console.log('1.1.3')
     return await Position.getCell()
 }
