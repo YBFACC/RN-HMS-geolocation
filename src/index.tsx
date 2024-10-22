@@ -98,7 +98,7 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
                         mcc,
                         mnc,
                         rat: cell.rat,
-                        rssi: cell.rssi,
+                        rssi: cell.rssi - 100,
                     },
                 }
 

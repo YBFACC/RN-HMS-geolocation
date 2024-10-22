@@ -127,7 +127,7 @@ class PositionModule(reactContext: ReactApplicationContext) :
         type = "CDMA"
       }
 
-      var rssi = -50
+      var rssi = 50
       val networkType = telephonyManager.networkType
       if (networkType == TelephonyManager.NETWORK_TYPE_LTE) {
         val signalStrength = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

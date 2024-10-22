@@ -27,7 +27,31 @@
 npm install react-native-position
 ```
 
-`开发中`
+```ts
+import { PermissionsAndroid } from 'react-native'
+import { getCurrentPosition } from 'react-native-position'
+
+const getLocation = async () => {
+    const granteds = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+        PermissionsAndroid.PERMISSIONS.READ_PHONE_STATE,
+    ])
+    if (
+        granteds['android.permission.ACCESS_FINE_LOCATION'] !== 'granted' ||
+        granteds['android.permission.ACCESS_COARSE_LOCATION'] !== 'granted' ||
+        granteds['android.permission.READ_PHONE_STATE'] !== 'granted'
+    ) {
+        console.log('权限拒绝')
+        return
+    }
+
+    return await getCurrentPosition({
+        hmsKey: '',
+        GNSStimeout: 5000,
+    })
+}
+```
 
 ## 注意事项
 
@@ -37,6 +61,12 @@ npm install react-native-position
 4. 需要使用 `wifi` 信息, 需要 `<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />`权限
 5. 需要使用 `cell` 信息, 需要 `<uses-permission android:name="android.permission.READ_PHONE_STATE" />`权限
 6. 使用 `HMS` 服务中需要遵守[关于华为开发者联盟与隐私的声明](https://developer.huawei.com/consumer/cn/devservice/term)
+
+## TODO
+
+- [ ] rssi 修正
+- [ ] ios 实现
+- [ ] 经纬度修正
 
 ## 开发中遇到的问题
 
