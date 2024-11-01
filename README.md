@@ -65,7 +65,7 @@ const getLocation = async () => {
 ## TODO
 
 -   [ ] ios 实现
--   [ x ] 附近 wifi 或基站信息获取, 加强网络定位
+-   [x] 附近 wifi 或基站信息获取, 加强网络定位
 
 ## Contributing
 
