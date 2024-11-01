@@ -85,30 +85,40 @@ class PositionModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
-  fun getWifi(promise: Promise) {
-    if (!wifiManager.isWifiEnabled) {
-      val map = Arguments.createMap().apply {
-        putString("ssid", "")
-        putString("bssid", "")
-        putInt("rssi", 0)
-        putBoolean("isWifiEnabled", false)
+  fun getWifis(promise: Promise) {
+    try {
+      // 检查WiFi是否启用
+      if (!wifiManager.isWifiEnabled) {
+        promise.reject("WIFI_DISABLED", "WiFi is not enabled")
+        return
       }
-      promise.resolve(map)
-      return
-    }
 
-    val wifiInfo = wifiManager.connectionInfo
-
-    if (wifiInfo != null) {
-      val map = Arguments.createMap().apply {
-        putString("ssid", wifiInfo.ssid)
-        putString("bssid", wifiInfo.bssid)
-        putInt("rssi", wifiInfo.rssi)
-        putBoolean("isWifiEnabled", true)
+      // 开始扫描
+      if (!wifiManager.startScan()) {
+        promise.reject("SCAN_FAILED", "Failed to start WiFi scan")
+        return
       }
-      promise.resolve(map)
-    } else {
-      promise.reject("WIFI_INFO_ERROR", "无法获取 WiFi 信息")
+
+      // 获取扫描结果
+      val scanResults = wifiManager.scanResults
+        .distinctBy { it.SSID }
+        .filter { it.SSID.isNotEmpty() }
+        .take(10)
+
+      val resultArray = Arguments.createArray()
+
+      scanResults.forEach { result ->
+        Arguments.createMap().apply {
+          putString("ssid", result.SSID)
+          putString("bssid", result.BSSID)
+          putInt("rssi", result.level)
+          resultArray.pushMap(this)
+        }
+      }
+
+      promise.resolve(resultArray)
+    } catch (e: Exception) {
+      promise.reject("WIFI_ERROR", "Failed to get WiFi list: ${e.message}")
     }
   }
 
@@ -142,7 +152,7 @@ class PositionModule(reactContext: ReactApplicationContext) :
         TelephonyManager.NETWORK_TYPE_EVDO_B,
         TelephonyManager.NETWORK_TYPE_EHRPD,
         TelephonyManager.NETWORK_TYPE_HSPAP,
-        TelephonyManager.NETWORK_TYPE_TD_SCDMA-> NETWORK_3G
+        TelephonyManager.NETWORK_TYPE_TD_SCDMA -> NETWORK_3G
         // 4G 网络类型
         TelephonyManager.NETWORK_TYPE_LTE,
         TelephonyManager.NETWORK_TYPE_IWLAN -> NETWORK_4G

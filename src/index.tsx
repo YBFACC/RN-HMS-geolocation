@@ -8,9 +8,9 @@ const LINKING_ERROR =
     '- You rebuilt the app after installing the package\n' +
     '- You are not using Expo Go\n'
 
-type WifiType = {
-    isWifiEnabled: boolean
+type WifisType = {
     bssid: string
+    ssid: string
     rssi: number
 }
 
@@ -31,7 +31,7 @@ type GNSSType = {
 const Position: {
     getGNSS: (timeout: number) => Promise<GNSSType>
     getCell: () => Promise<CellType>
-    getWifi: () => Promise<WifiType>
+    getWifis: () => Promise<WifisType[]>
 } = NativeModules.Position
     ? NativeModules.Position
     : new Proxy(
@@ -61,66 +61,63 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
     }
 
     try {
-        const wifi = await Position.getWifi()
+        const wifis = await Position.getWifis()
 
-        if (wifi.isWifiEnabled && wifi.bssid) {
-            // WiFi 已连接，使用 HMS Location 服务
+        const HMSRequest = wifis.map(wifi => ({
+            mac: macTransform(wifi.bssid),
+            rssi: wifi.rssi,
+            time: Date.now() * 1000,
+        }))
+        if (HMSRequest.length === 0) {
+            throw new Error('No WiFi info')
+        }
+
+        const hmsLocation = await HMSLocation(_config.hmsKey, [], HMSRequest)
+        return {
+            latitude: hmsLocation.latitude,
+            longitude: hmsLocation.longitude,
+            from: 'Wifi',
+            HMSResult: hmsLocation.HMSResult,
+            HMSRequest,
+        }
+    } catch (error) {
+        // WiFi 关闭，尝试使用 GNSS
+        try {
+            const gnss = await Position.getGNSS(_config.GNSStimeout)
+            return {
+                latitude: gnss.latitude,
+                longitude: gnss.longitude,
+                from: 'GNSS',
+            }
+        } catch (gnssError) {
+            // GNSS 失败，使用 Cell 信息
+            const cell = await Position.getCell()
+
+            const mcc = +cell.simOperator.substring(0, 3)
+            let mnc = +cell.simOperator.substring(3)
+            if (mnc < 10) {
+                mnc = 0
+            }
             const HMSRequest = {
-                mac: macTransform(wifi.bssid),
-                rssi: wifi.rssi,
-                time: Date.now() * 1000,
+                currentCell: {
+                    cellId: +cell.cellId,
+                    lac: +cell.lac,
+                    mcc,
+                    mnc,
+                    rat: cell.rat,
+                    rssi: cell.rssi,
+                },
             }
 
-            const hmsLocation = await HMSLocation(_config.hmsKey, [], [HMSRequest])
+            const hmsLocation = await HMSLocation(_config.hmsKey, [HMSRequest], [])
             return {
                 latitude: hmsLocation.latitude,
                 longitude: hmsLocation.longitude,
-                from: 'Wifi',
+                from: 'Cell',
                 HMSResult: hmsLocation.HMSResult,
                 HMSRequest,
             }
-        } else {
-            // WiFi 未连接，尝试使用 GNSS
-            try {
-                const gnss = await Position.getGNSS(_config.GNSStimeout)
-                return {
-                    latitude: gnss.latitude,
-                    longitude: gnss.longitude,
-                    from: 'GNSS',
-                }
-            } catch (gnssError) {
-                // GNSS 失败，使用 Cell 信息
-                const cell = await Position.getCell()
-
-                const mcc = +cell.simOperator.substring(0, 3)
-                let mnc = +cell.simOperator.substring(3)
-                if (mnc < 10) {
-                    mnc = 0
-                }
-                const HMSRequest = {
-                    currentCell: {
-                        cellId: +cell.cellId,
-                        lac: +cell.lac,
-                        mcc,
-                        mnc,
-                        rat: cell.rat,
-                        rssi: cell.rssi,
-                    },
-                }
-
-                const hmsLocation = await HMSLocation(_config.hmsKey, [HMSRequest], [])
-                return {
-                    latitude: hmsLocation.latitude,
-                    longitude: hmsLocation.longitude,
-                    from: 'Cell',
-                    HMSResult: hmsLocation.HMSResult,
-                    HMSRequest,
-                }
-            }
         }
-    } catch (error) {
-        console.error('定位失败:', error)
-        throw error
     }
 }
 
@@ -128,6 +125,6 @@ export async function getCellInfo(): Promise<CellType> {
     return await Position.getCell()
 }
 
-export async function getWifi(): Promise<WifiType> {
-    return await Position.getWifi()
+export async function getWifis(): Promise<WifisType[]> {
+    return await Position.getWifis()
 }
