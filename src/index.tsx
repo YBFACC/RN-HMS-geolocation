@@ -8,24 +8,30 @@ const LINKING_ERROR =
     '- You rebuilt the app after installing the package\n' +
     '- You are not using Expo Go\n'
 
+type WifiType = {
+    isWifiEnabled: boolean
+    bssid: string
+    rssi: number
+}
+
+type CellType = {
+    cellId: string
+    rat: number
+    lac: string
+    rssi: number
+    simOperator: string
+    type: 'GSM' | 'CDMA'
+}
+
+type GNSSType = {
+    latitude: number
+    longitude: number
+}
+
 const Position: {
-    getGNSS: (timeout: number) => Promise<{
-        latitude: number
-        longitude: number
-    }>
-    getCell: () => Promise<{
-        cellId: string
-        rat: number
-        lac: string
-        rssi: number
-        simOperator: string
-        type: 'GSM' | 'CDMA'
-    }>
-    getWifi: () => Promise<{
-        isWifiEnabled: boolean
-        bssid: string
-        rssi: number
-    }>
+    getGNSS: (timeout: number) => Promise<GNSSType>
+    getCell: () => Promise<CellType>
+    getWifi: () => Promise<WifiType>
 } = NativeModules.Position
     ? NativeModules.Position
     : new Proxy(
@@ -61,7 +67,7 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
             // WiFi 已连接，使用 HMS Location 服务
             const HMSRequest = {
                 mac: macTransform(wifi.bssid),
-                rssi: wifi.rssi - 100,
+                rssi: wifi.rssi,
                 time: Date.now() * 1000,
             }
 
@@ -98,7 +104,7 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
                         mcc,
                         mnc,
                         rat: cell.rat,
-                        rssi: cell.rssi - 100,
+                        rssi: cell.rssi,
                     },
                 }
 
@@ -118,13 +124,10 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
     }
 }
 
-export async function getCellInfo(): Promise<{
-    cellId: string
-    rat: number
-    lac: string
-    rssi: number
-    simOperator: string
-    type: 'GSM' | 'CDMA'
-}> {
+export async function getCellInfo(): Promise<CellType> {
     return await Position.getCell()
+}
+
+export async function getWifi(): Promise<WifiType> {
+    return await Position.getWifi()
 }

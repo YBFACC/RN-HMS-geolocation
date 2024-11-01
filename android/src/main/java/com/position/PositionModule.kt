@@ -5,20 +5,24 @@ import android.content.Context
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
-import android.os.Bundle
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.Promise
-import com.facebook.react.bridge.WritableMap
-import com.facebook.react.bridge.Arguments
-import android.os.Handler
-import android.os.Looper
 import android.net.wifi.WifiManager
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.telephony.CellSignalStrengthGsm
+import android.telephony.CellSignalStrengthLte
+import android.telephony.CellSignalStrengthNr
+import android.telephony.CellSignalStrengthWcdma
 import android.telephony.TelephonyManager
 import android.telephony.cdma.CdmaCellLocation
 import android.telephony.gsm.GsmCellLocation
+import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
+import com.facebook.react.bridge.WritableMap
 
 
 class PositionModule(reactContext: ReactApplicationContext) :
@@ -127,25 +131,61 @@ class PositionModule(reactContext: ReactApplicationContext) :
         type = "CDMA"
       }
 
-      var rssi = 50
-      val networkType = telephonyManager.networkType
-      if (networkType == TelephonyManager.NETWORK_TYPE_LTE) {
-        val signalStrength = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-          telephonyManager.signalStrength
-        } else {
-          null
-        }
-        if (signalStrength != null) {
-          rssi = signalStrength.getGsmSignalStrength()
-        }
+      val rat = when (telephonyManager.networkType) {
+        // 3G 网络类型
+        TelephonyManager.NETWORK_TYPE_UMTS,
+        TelephonyManager.NETWORK_TYPE_EVDO_0,
+        TelephonyManager.NETWORK_TYPE_EVDO_A,
+        TelephonyManager.NETWORK_TYPE_HSDPA,
+        TelephonyManager.NETWORK_TYPE_HSUPA,
+        TelephonyManager.NETWORK_TYPE_HSPA,
+        TelephonyManager.NETWORK_TYPE_EVDO_B,
+        TelephonyManager.NETWORK_TYPE_EHRPD,
+        TelephonyManager.NETWORK_TYPE_HSPAP,
+        TelephonyManager.NETWORK_TYPE_TD_SCDMA-> NETWORK_3G
+        // 4G 网络类型
+        TelephonyManager.NETWORK_TYPE_LTE,
+        TelephonyManager.NETWORK_TYPE_IWLAN -> NETWORK_4G
+        // 5G 网络类型
+        TelephonyManager.NETWORK_TYPE_NR -> NETWORK_5G
+        else -> NETWORK_UNKNOWN
       }
 
-      val rat = when (telephonyManager.networkType) {
-        TelephonyManager.NETWORK_TYPE_GPRS, TelephonyManager.NETWORK_TYPE_EDGE, TelephonyManager.NETWORK_TYPE_CDMA, TelephonyManager.NETWORK_TYPE_1xRTT, TelephonyManager.NETWORK_TYPE_IDEN -> "1"
-        TelephonyManager.NETWORK_TYPE_UMTS, TelephonyManager.NETWORK_TYPE_EVDO_0, TelephonyManager.NETWORK_TYPE_EVDO_A, TelephonyManager.NETWORK_TYPE_HSDPA, TelephonyManager.NETWORK_TYPE_HSUPA, TelephonyManager.NETWORK_TYPE_HSPA, TelephonyManager.NETWORK_TYPE_EVDO_B, TelephonyManager.NETWORK_TYPE_EHRPD, TelephonyManager.NETWORK_TYPE_HSPAP -> "2"
-        TelephonyManager.NETWORK_TYPE_LTE -> "3"
-        TelephonyManager.NETWORK_TYPE_NR -> "4"
-        else -> "3"
+      var rssi = 0
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        telephonyManager.signalStrength?.let { signalStrength ->
+          rssi = when {
+            signalStrength.getCellSignalStrengths(CellSignalStrengthLte::class.java)
+              .isNotEmpty() -> {
+              val lteRssi =
+                signalStrength.getCellSignalStrengths(CellSignalStrengthLte::class.java)[0].rssi
+              if (lteRssi == Integer.MAX_VALUE) 0 else lteRssi
+            }
+
+            signalStrength.getCellSignalStrengths(CellSignalStrengthGsm::class.java)
+              .isNotEmpty() -> {
+              val gsmDbm =
+                signalStrength.getCellSignalStrengths(CellSignalStrengthGsm::class.java)[0].dbm
+              if (gsmDbm == Integer.MAX_VALUE) 0 else gsmDbm
+            }
+
+            signalStrength.getCellSignalStrengths(CellSignalStrengthWcdma::class.java)
+              .isNotEmpty() -> {
+              val wcdmaDbm =
+                signalStrength.getCellSignalStrengths(CellSignalStrengthWcdma::class.java)[0].dbm
+              if (wcdmaDbm == Integer.MAX_VALUE) 0 else wcdmaDbm
+            }
+
+            signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)
+              .isNotEmpty() -> {
+              val nrDbm =
+                signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)[0].dbm
+              if (nrDbm == Integer.MAX_VALUE) 0 else nrDbm
+            }
+
+            else -> 0
+          }
+        }
       }
 
       val map = Arguments.createMap()
@@ -163,5 +203,10 @@ class PositionModule(reactContext: ReactApplicationContext) :
 
   companion object {
     const val NAME = "Position"
+
+    const val NETWORK_3G = "2"
+    const val NETWORK_4G = "3"
+    const val NETWORK_5G = "4"
+    const val NETWORK_UNKNOWN = "3"
   }
 }

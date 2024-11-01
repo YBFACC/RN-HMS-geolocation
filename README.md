@@ -64,7 +64,6 @@ const getLocation = async () => {
 
 ## TODO
 
-- [ ] rssi 修正
 - [ ] ios 实现
 - [ ] 经纬度修正,不同坐标系转换
 - [ ] 附近 wifi 或基站信息获取, 加强网络定位
