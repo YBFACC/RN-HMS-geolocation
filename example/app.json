@@ -42,6 +42,9 @@
                 "android:name": "android.permission.ACCESS_WIFI_STATE"
             },
             {
+                "android:name": "android.permission.CHANGE_WIFI_STATE"
+            },
+            {
                 "android:name": "android.permission.READ_PHONE_STATE"
             }
         ]
