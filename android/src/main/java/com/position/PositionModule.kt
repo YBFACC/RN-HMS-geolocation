@@ -16,9 +16,11 @@ import android.telephony.CellInfoLte
 import android.telephony.CellInfoNr
 import android.telephony.CellInfoTdscdma
 import android.telephony.CellInfoWcdma
+import android.telephony.CellSignalStrengthCdma
 import android.telephony.CellSignalStrengthGsm
 import android.telephony.CellSignalStrengthLte
 import android.telephony.CellSignalStrengthNr
+import android.telephony.CellSignalStrengthTdscdma
 import android.telephony.CellSignalStrengthWcdma
 import android.telephony.TelephonyManager
 import android.telephony.cdma.CdmaCellLocation
@@ -171,11 +173,12 @@ class PositionModule(reactContext: ReactApplicationContext) :
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
         telephonyManager.signalStrength?.let { signalStrength ->
           rssi = when {
-            signalStrength.getCellSignalStrengths(CellSignalStrengthLte::class.java)
+
+            signalStrength.getCellSignalStrengths(CellSignalStrengthCdma::class.java)
               .isNotEmpty() -> {
-              val lteRssi =
-                signalStrength.getCellSignalStrengths(CellSignalStrengthLte::class.java)[0].rssi
-              if (lteRssi == Integer.MAX_VALUE) 0 else lteRssi
+              val cdmaDbm =
+                signalStrength.getCellSignalStrengths(CellSignalStrengthCdma::class.java)[0].dbm
+              if (cdmaDbm == Integer.MAX_VALUE) 0 else cdmaDbm
             }
 
             signalStrength.getCellSignalStrengths(CellSignalStrengthGsm::class.java)
@@ -185,11 +188,11 @@ class PositionModule(reactContext: ReactApplicationContext) :
               if (gsmDbm == Integer.MAX_VALUE) 0 else gsmDbm
             }
 
-            signalStrength.getCellSignalStrengths(CellSignalStrengthWcdma::class.java)
+            signalStrength.getCellSignalStrengths(CellSignalStrengthLte::class.java)
               .isNotEmpty() -> {
-              val wcdmaDbm =
-                signalStrength.getCellSignalStrengths(CellSignalStrengthWcdma::class.java)[0].dbm
-              if (wcdmaDbm == Integer.MAX_VALUE) 0 else wcdmaDbm
+              val lteRssi =
+                signalStrength.getCellSignalStrengths(CellSignalStrengthLte::class.java)[0].rssi
+              if (lteRssi == Integer.MAX_VALUE) 0 else lteRssi
             }
 
             signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)
@@ -197,6 +200,20 @@ class PositionModule(reactContext: ReactApplicationContext) :
               val nrDbm =
                 signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)[0].dbm
               if (nrDbm == Integer.MAX_VALUE) 0 else nrDbm
+            }
+
+            signalStrength.getCellSignalStrengths(CellSignalStrengthWcdma::class.java)
+              .isNotEmpty() -> {
+              val wcdmaDbm =
+                signalStrength.getCellSignalStrengths(CellSignalStrengthWcdma::class.java)[0].dbm
+              if (wcdmaDbm == Integer.MAX_VALUE) 0 else wcdmaDbm
+            }
+
+            signalStrength.getCellSignalStrengths(CellSignalStrengthTdscdma::class.java)
+              .isNotEmpty() -> {
+              val tdscdmaDbm =
+                signalStrength.getCellSignalStrengths(CellSignalStrengthTdscdma::class.java)[0].dbm
+              if (tdscdmaDbm == Integer.MAX_VALUE) 0 else tdscdmaDbm
             }
 
             else -> 0
@@ -236,7 +253,7 @@ class PositionModule(reactContext: ReactApplicationContext) :
               val rssi = cellInfo.cellSignalStrength.dbm
               val cNum = cellInfo.cellIdentity.basestationId
               val pId = cellInfo.cellIdentity.systemId
-              
+
               if (isValidCellData(rssi, cNum, pId)) {
                 cellMap.apply {
                   putInt("rssi", rssi)
@@ -251,7 +268,7 @@ class PositionModule(reactContext: ReactApplicationContext) :
               val rssi = cellInfo.cellSignalStrength.dbm
               val cNum = cellInfo.cellIdentity.cid
               val pId = cellInfo.cellIdentity.cpid
-              
+
               if (isValidCellData(rssi, cNum, pId)) {
                 cellMap.apply {
                   putInt("rssi", rssi)
@@ -266,7 +283,7 @@ class PositionModule(reactContext: ReactApplicationContext) :
               val rssi = cellInfo.cellSignalStrength.rssi
               val cNum = cellInfo.cellIdentity.ci
               val pId = cellInfo.cellIdentity.pci
-              
+
               if (isValidCellData(rssi, cNum, pId)) {
                 cellMap.apply {
                   putInt("rssi", rssi)
@@ -281,7 +298,7 @@ class PositionModule(reactContext: ReactApplicationContext) :
               val rssi = cellInfo.cellSignalStrength.dbm
               val cNum = cellInfo.cellIdentity.cid
               val pId = cellInfo.cellIdentity.psc
-              
+
               if (isValidCellData(rssi, cNum, pId)) {
                 cellMap.apply {
                   putInt("rssi", rssi)
@@ -304,12 +321,12 @@ class PositionModule(reactContext: ReactApplicationContext) :
 
   // 添加辅助函数来验证数据
   private fun isValidCellData(rssi: Int, cNum: Int, pId: Int): Boolean {
-    return rssi != Integer.MAX_VALUE && 
-           rssi != 0 && 
-           cNum != Integer.MAX_VALUE && 
-           cNum > 0 && 
-           pId != Integer.MAX_VALUE && 
-           pId >= 0
+    return rssi != Integer.MAX_VALUE &&
+      rssi != 0 &&
+      cNum != Integer.MAX_VALUE &&
+      cNum > 0 &&
+      pId != Integer.MAX_VALUE &&
+      pId >= 0
   }
 
   companion object {
