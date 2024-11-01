@@ -24,6 +24,9 @@ export function HMSLocation(
     latitude: number
     HMSResult: any
 }> {
+    console.log('cellInfos', cellInfos)
+    console.log('wifiInfos', wifiInfos)
+
     return fetch('https://locationapi.cloud.huawei.com/networklocation/v1/geoLocation', {
         method: 'POST',
         headers: {

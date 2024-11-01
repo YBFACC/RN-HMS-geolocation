@@ -10,6 +10,12 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.telephony.CellInfoCdma
+import android.telephony.CellInfoGsm
+import android.telephony.CellInfoLte
+import android.telephony.CellInfoNr
+import android.telephony.CellInfoTdscdma
+import android.telephony.CellInfoWcdma
 import android.telephony.CellSignalStrengthGsm
 import android.telephony.CellSignalStrengthLte
 import android.telephony.CellSignalStrengthNr
@@ -209,6 +215,101 @@ class PositionModule(reactContext: ReactApplicationContext) :
     } catch (e: Exception) {
       promise.reject("CELL_ERROR", "获取蜂窝网络信息失败: ${e.message}")
     }
+  }
+
+  @SuppressLint("MissingPermission")
+  @ReactMethod
+  fun getNeighborCell(promise: Promise) {
+    try {
+      val neighboringCells = Arguments.createArray()
+
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        telephonyManager.allCellInfo?.forEach { cellInfo ->
+          val cellMap = Arguments.createMap()
+
+          when (cellInfo) {
+            is CellInfoGsm -> {
+              // 无 pid 跳过
+            }
+
+            is CellInfoCdma -> {
+              val rssi = cellInfo.cellSignalStrength.dbm
+              val cNum = cellInfo.cellIdentity.basestationId
+              val pId = cellInfo.cellIdentity.systemId
+              
+              if (isValidCellData(rssi, cNum, pId)) {
+                cellMap.apply {
+                  putInt("rssi", rssi)
+                  putInt("cNum", cNum)
+                  putInt("pId", pId)
+                }
+                neighboringCells.pushMap(cellMap)
+              }
+            }
+
+            is CellInfoTdscdma -> {
+              val rssi = cellInfo.cellSignalStrength.dbm
+              val cNum = cellInfo.cellIdentity.cid
+              val pId = cellInfo.cellIdentity.cpid
+              
+              if (isValidCellData(rssi, cNum, pId)) {
+                cellMap.apply {
+                  putInt("rssi", rssi)
+                  putInt("cNum", cNum)
+                  putInt("pId", pId)
+                }
+                neighboringCells.pushMap(cellMap)
+              }
+            }
+
+            is CellInfoLte -> {
+              val rssi = cellInfo.cellSignalStrength.rssi
+              val cNum = cellInfo.cellIdentity.ci
+              val pId = cellInfo.cellIdentity.pci
+              
+              if (isValidCellData(rssi, cNum, pId)) {
+                cellMap.apply {
+                  putInt("rssi", rssi)
+                  putInt("cNum", cNum)
+                  putInt("pId", pId)
+                }
+                neighboringCells.pushMap(cellMap)
+              }
+            }
+
+            is CellInfoWcdma -> {
+              val rssi = cellInfo.cellSignalStrength.dbm
+              val cNum = cellInfo.cellIdentity.cid
+              val pId = cellInfo.cellIdentity.psc
+              
+              if (isValidCellData(rssi, cNum, pId)) {
+                cellMap.apply {
+                  putInt("rssi", rssi)
+                  putInt("cNum", cNum)
+                  putInt("pId", pId)
+                }
+                neighboringCells.pushMap(cellMap)
+              }
+            }
+          }
+        }
+      }
+
+      promise.resolve(neighboringCells)
+    } catch (e: Exception) {
+      val emptyArray = Arguments.createArray()
+      promise.resolve(emptyArray)
+    }
+  }
+
+  // 添加辅助函数来验证数据
+  private fun isValidCellData(rssi: Int, cNum: Int, pId: Int): Boolean {
+    return rssi != Integer.MAX_VALUE && 
+           rssi != 0 && 
+           cNum != Integer.MAX_VALUE && 
+           cNum > 0 && 
+           pId != Integer.MAX_VALUE && 
+           pId >= 0
   }
 
   companion object {

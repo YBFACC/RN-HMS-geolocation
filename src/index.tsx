@@ -28,10 +28,17 @@ type GNSSType = {
     longitude: number
 }
 
+type NeighborCellType = {
+    rssi: number
+    cNum: number
+    pId: number
+}
+
 const Position: {
     getGNSS: (timeout: number) => Promise<GNSSType>
     getCell: () => Promise<CellType>
     getWifis: () => Promise<WifisType[]>
+    getNeighborCell: () => Promise<NeighborCellType[]>
 } = NativeModules.Position
     ? NativeModules.Position
     : new Proxy(
@@ -53,7 +60,6 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
     longitude: number
     from: 'GNSS' | 'Cell' | 'Wifi'
     HMSResult?: any
-    HMSRequest?: any
 }> {
     const _config = {
         hmsKey: config.hmsKey ?? '',
@@ -78,7 +84,6 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
             longitude: hmsLocation.longitude,
             from: 'Wifi',
             HMSResult: hmsLocation.HMSResult,
-            HMSRequest,
         }
     } catch (error) {
         // WiFi 关闭，尝试使用 GNSS
@@ -107,7 +112,12 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
                     rat: cell.rat,
                     rssi: cell.rssi,
                 },
+                neighborCells: [] as NeighborCellType[],
             }
+
+            const neighborCell = await Position.getNeighborCell()
+            // HMS 限制最多 8 个
+            HMSRequest.neighborCells = neighborCell.slice(0, 8)
 
             const hmsLocation = await HMSLocation(_config.hmsKey, [HMSRequest], [])
             return {
@@ -115,7 +125,6 @@ export async function getCurrentPosition(config: ConfigType): Promise<{
                 longitude: hmsLocation.longitude,
                 from: 'Cell',
                 HMSResult: hmsLocation.HMSResult,
-                HMSRequest,
             }
         }
     }
@@ -127,4 +136,8 @@ export async function getCellInfo(): Promise<CellType> {
 
 export async function getWifis(): Promise<WifisType[]> {
     return await Position.getWifis()
+}
+
+export async function getNeighborCell(): Promise<NeighborCellType[]> {
+    return await Position.getNeighborCell()
 }
