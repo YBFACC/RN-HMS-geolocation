@@ -134,19 +134,45 @@ class PositionModule(reactContext: ReactApplicationContext) :
   @ReactMethod
   fun getCell(promise: Promise) {
     try {
-      val cel = telephonyManager.getCellLocation()
       var cellid = 0
       var lac = 0
       var type = ""
 
+      val cel = telephonyManager.getCellLocation()
       if (cel is GsmCellLocation) {
-        cellid = cel.cid
-        lac = cel.lac
-        type = "GSM"
+          cellid = cel.cid
+          lac = cel.lac
+          type = "GsmCellLocation"
       } else if (cel is CdmaCellLocation) {
-        cellid = cel.baseStationId
-        lac = cel.networkId
-        type = "CDMA"
+          cellid = cel.baseStationId
+          lac = cel.networkId
+          type = "CdmaCellLocation"
+      } else {
+          // 如果旧方法失败，尝试使用新方法
+          telephonyManager.allCellInfo?.firstOrNull()?.let { cellInfo ->
+              when (cellInfo) {
+                  is CellInfoGsm -> {
+                      cellid = cellInfo.cellIdentity.cid
+                      lac = cellInfo.cellIdentity.lac
+                      type = "CellInfoGsm"
+                  }
+                  is CellInfoCdma -> {
+                      cellid = cellInfo.cellIdentity.basestationId
+                      lac = cellInfo.cellIdentity.networkId
+                      type = "CellInfoCdma"
+                  }
+                  is CellInfoLte -> {
+                      cellid = cellInfo.cellIdentity.ci
+                      lac = cellInfo.cellIdentity.tac
+                      type = "CellInfoLte"
+                  }
+                  is CellInfoWcdma -> {
+                      cellid = cellInfo.cellIdentity.cid
+                      lac = cellInfo.cellIdentity.lac
+                      type = "CellInfoWcdma"
+                  }
+              }
+          }
       }
 
       val rat = when (telephonyManager.networkType) {

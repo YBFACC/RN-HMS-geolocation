@@ -20,7 +20,13 @@ type CellType = {
     lac: string
     rssi: number
     simOperator: string
-    type: 'GSM' | 'CDMA'
+    type:
+        | 'GsmCellLocation'
+        | 'CdmaCellLocation'
+        | 'CellInfoGsm'
+        | 'CellInfoCdma'
+        | 'CellInfoLte'
+        | 'CellInfoWcdma'
 }
 
 type GNSSType = {

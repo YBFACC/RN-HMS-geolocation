@@ -1,6 +1,6 @@
 {
     "name": "react-native-position",
-    "version": "1.5.2",
+    "version": "1.7.0",
     "description": "react-native-position",
     "source": "./src/index.tsx",
     "main": "./lib/commonjs/index.js",
