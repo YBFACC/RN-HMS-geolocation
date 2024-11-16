@@ -47,8 +47,10 @@
     },
     "keywords": [
         "react-native",
-        "ios",
-        "android"
+        "HMS",
+        "android",
+        "position",
+        "location"
     ],
     "repository": {
         "type": "git",
